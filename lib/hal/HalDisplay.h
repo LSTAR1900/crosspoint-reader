@@ -20,6 +20,13 @@ class HalDisplay {
   // Initialize the display hardware and driver
   void begin();
 
+  // Pre-begin display config passthroughs (used by X3 setup path)
+  void setDcPin(int8_t pin);
+  void setBusyActiveHigh(bool activeHigh);
+  void setBwOnly(bool bwOnly);
+  void setControllerType(EInkDisplay::ControllerType type);
+  void setDisplayDimensions(uint16_t width, uint16_t height);
+
   // Display dimensions
   static constexpr uint16_t DISPLAY_WIDTH = EInkDisplay::DISPLAY_WIDTH;
   static constexpr uint16_t DISPLAY_HEIGHT = EInkDisplay::DISPLAY_HEIGHT;
@@ -46,6 +53,12 @@ class HalDisplay {
   void cleanupGrayscaleBuffers(const uint8_t* bwBuffer);
 
   void displayGrayBuffer(bool turnOffScreen = false);
+
+  // Runtime geometry passthrough
+  uint16_t getDisplayWidth() const;
+  uint16_t getDisplayHeight() const;
+  uint16_t getDisplayWidthBytes() const;
+  uint32_t getBufferSize() const;
 
  private:
   EInkDisplay einkDisplay;

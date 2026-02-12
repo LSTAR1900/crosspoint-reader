@@ -253,6 +253,13 @@ void onGoHome() {
 }
 
 void setupDisplayAndFonts() {
+  if (gpio.getDeviceType() == HalGPIO::DeviceType::X3) {
+    display.setDcPin(4);
+    display.setBusyActiveHigh(false);
+    display.setBwOnly(true);
+    display.setControllerType(EInkDisplay::ControllerType::SSD1677);
+    display.setDisplayDimensions(792, 528);
+  }
   display.begin();
   renderer.begin();
   Serial.printf("[%lu] [   ] Display initialized\n", millis());

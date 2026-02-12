@@ -5,7 +5,14 @@
 void HalGPIO::begin() {
   inputMgr.begin();
   SPI.begin(EPD_SCLK, SPI_MISO, EPD_MOSI, EPD_CS);
-  pinMode(BAT_GPIO0, INPUT);
+
+  // X3 boards bias GPIO4 (EPD DC) around ~700 ADC counts at boot in our setup.
+  // X4 boards do not, and use GPIO0 for battery ADC.
+  _detectAdcValue = analogRead(4);
+  _deviceType = (_detectAdcValue > 500 && _detectAdcValue < 1200) ? DeviceType::X3 : DeviceType::X4;
+  _batteryPin = (_deviceType == DeviceType::X3) ? 4 : BAT_GPIO0;
+
+  pinMode(_batteryPin, INPUT);
   pinMode(UART0_RXD, INPUT);
 }
 
@@ -36,6 +43,10 @@ void HalGPIO::startDeepSleep() {
 }
 
 int HalGPIO::getBatteryPercentage() const {
+  if (_deviceType == DeviceType::X3) {
+    // X3 battery telemetry is not on ADC in stock fw; avoid fighting EPD DC on GPIO4.
+    return 0;
+  }
   static const BatteryMonitor battery = BatteryMonitor(BAT_GPIO0);
   return battery.readPercentage();
 }
