@@ -9,14 +9,6 @@ HalDisplay::~HalDisplay() {}
 
 void HalDisplay::begin() { einkDisplay.begin(); }
 
-void HalDisplay::setDcPin(int8_t pin) { einkDisplay.setDcPin(pin); }
-
-void HalDisplay::setBusyActiveHigh(bool activeHigh) { einkDisplay.setBusyActiveHigh(activeHigh); }
-
-void HalDisplay::setBwOnly(bool bwOnly) { einkDisplay.setBwOnly(bwOnly); }
-
-void HalDisplay::setControllerType(EInkDisplay::ControllerType type) { einkDisplay.setControllerType(type); }
-
 void HalDisplay::setDisplayDimensions(uint16_t width, uint16_t height) { einkDisplay.setDisplayDimensions(width, height); }
 
 void HalDisplay::clearScreen(uint8_t color) const { einkDisplay.clearScreen(color); }

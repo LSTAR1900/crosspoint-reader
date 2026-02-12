@@ -21,10 +21,6 @@ class HalDisplay {
   void begin();
 
   // Pre-begin display config passthroughs (used by X3 setup path)
-  void setDcPin(int8_t pin);
-  void setBusyActiveHigh(bool activeHigh);
-  void setBwOnly(bool bwOnly);
-  void setControllerType(EInkDisplay::ControllerType type);
   void setDisplayDimensions(uint16_t width, uint16_t height);
 
   // Display dimensions

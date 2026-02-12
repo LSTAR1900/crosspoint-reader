@@ -255,10 +255,6 @@ void onGoHome() {
 
 void setupDisplayAndFonts() {
   if (gpio.getDeviceType() == HalGPIO::DeviceType::X3) {
-    display.setDcPin(4);
-    display.setBusyActiveHigh(false);
-    display.setBwOnly(true);
-    display.setControllerType(EInkDisplay::ControllerType::SSD1677);
     display.setDisplayDimensions(792, 528);
     // X3 has a BQ27220 fuel gauge on I2C (addr 0x55) instead of an ADC voltage
     // divider. SOC (0-100%) is read directly from register 0x2C.
