@@ -200,6 +200,43 @@ void waitForPowerRelease() {
   }
 }
 
+// X3 wake gate: avoid "timing lottery" from strict calibration logic,
+// but still require an intentional press (not a tap).
+bool verifyPowerButtonDurationX3() {
+  constexpr uint16_t detectWindowMs = 1200;  // time to detect an intentional wake press
+  constexpr uint16_t minHoldMs = 180;        // short, deliberate hold (blocks accidental taps)
+
+  const unsigned long start = millis();
+  bool sawPress = false;
+  unsigned long pressStart = 0;
+
+  // Stage 1: wait for the button state to settle and detect a press.
+  while (millis() - start < detectWindowMs) {
+    gpio.update();
+    if (gpio.isPressed(HalGPIO::BTN_POWER)) {
+      sawPress = true;
+      pressStart = millis();
+      break;
+    }
+    delay(10);
+  }
+
+  if (!sawPress) {
+    return false;
+  }
+
+  // Stage 2: require a short continuous hold.
+  while (millis() - pressStart < minHoldMs) {
+    gpio.update();
+    if (!gpio.isPressed(HalGPIO::BTN_POWER)) {
+      return false;
+    }
+    delay(10);
+  }
+
+  return true;
+}
+
 // Enter deep sleep mode
 void enterDeepSleep() {
   APP_STATE.lastSleepFromReader = currentActivity && currentActivity->isReaderActivity();
@@ -332,9 +369,18 @@ void setup() {
   const auto wakeupReason = gpio.getWakeupReason();
   switch (wakeupReason) {
     case HalGPIO::WakeupReason::PowerButton:
-      // For normal wakeups, verify power button press duration
-      Serial.printf("[%lu] [   ] Verifying power button press duration\n", millis());
-      verifyPowerButtonDuration();
+      // X3 uses a relaxed fixed hold check to avoid strict timing behavior
+      // while still filtering accidental single-click wakes.
+      if (gpio.getDeviceType() == HalGPIO::DeviceType::X3) {
+        Serial.printf("[%lu] [   ] Verifying relaxed power-button wake on X3\n", millis());
+        if (!verifyPowerButtonDurationX3()) {
+          gpio.startDeepSleep();
+        }
+      } else {
+        // For non-X3 wakeups, keep existing verification behavior.
+        Serial.printf("[%lu] [   ] Verifying power button press duration\n", millis());
+        verifyPowerButtonDuration();
+      }
       break;
     case HalGPIO::WakeupReason::AfterUSBPower:
       // If USB power caused a cold boot, go back to sleep
