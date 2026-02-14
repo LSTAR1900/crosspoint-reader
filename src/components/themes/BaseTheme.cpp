@@ -1,6 +1,7 @@
 #include "BaseTheme.h"
 
 #include <GfxRenderer.h>
+#include <HalGPIO.h>
 #include <HalStorage.h>
 #include <Logging.h>
 #include <Utf8.h>
@@ -8,7 +9,6 @@
 #include <cstdint>
 #include <string>
 
-#include <HalGPIO.h>
 #include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
