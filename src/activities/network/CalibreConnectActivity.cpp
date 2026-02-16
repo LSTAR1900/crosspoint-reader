@@ -201,6 +201,11 @@ void CalibreConnectActivity::displayTaskLoop() {
 }
 
 void CalibreConnectActivity::render() const {
+  // Don't render when WifiSelectionActivity subactivity is active
+  if (state == CalibreConnectState::WIFI_SELECTION) {
+    return;
+  }
+
   if (state == CalibreConnectState::SERVER_RUNNING) {
     renderer.clearScreen();
     renderServerRunning();
