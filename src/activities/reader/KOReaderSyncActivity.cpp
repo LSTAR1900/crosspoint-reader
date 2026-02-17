@@ -105,6 +105,7 @@ void KOReaderSyncActivity::performSync() {
       RenderLock lock(*this);
       state = NO_REMOTE_PROGRESS;
       hasRemoteProgress = false;
+      selectedOption = 1;  // Default to "Upload local" when remote progress is unavailable
     }
     requestUpdate();
     return;
@@ -132,7 +133,9 @@ void KOReaderSyncActivity::performSync() {
   {
     RenderLock lock(*this);
     state = SHOWING_RESULT;
-    selectedOption = 0;  // Default to "Apply"
+    // Default selection is based on which progress is ahead.
+    // 0 = Apply remote, 1 = Upload local
+    selectedOption = (localProgress.percentage > remoteProgress.percentage) ? 1 : 0;
   }
   requestUpdate();
 }
