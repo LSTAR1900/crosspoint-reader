@@ -23,6 +23,12 @@ def assert_not_contains(rel: str, *needles: str) -> None:
         assert needle not in text, f"{rel} must not contain {needle!r}"
 
 
+def slice_between(text: str, start: str, end: str) -> str:
+    start_idx = text.index(start)
+    end_idx = text.index(end, start_idx)
+    return text[start_idx:end_idx]
+
+
 def main() -> None:
     assert_contains(
         "lib/Epub/Epub/IncrementalSectionTypes.h",
@@ -266,6 +272,48 @@ def main() -> None:
         "displayFactoryGrayBufferFromStoredBwAndGrayMasks",
         "displayFactoryGrayBuffer",
     )
+
+    assert_contains(
+        "lib/Epub/Epub/Page.h",
+        "void renderTextOnly(GfxRenderer& renderer, int fontId, int xOffset, int yOffset) const;",
+    )
+    page_cpp = read("lib/Epub/Epub/Page.cpp")
+    assert "void Page::renderTextOnly" in page_cpp
+    assert "TAG_PageLine" in slice_between(page_cpp, "void Page::renderTextOnly", "bool Page::serialize")
+
+    epub_reader_cpp = read("src/activities/reader/EpubReaderActivity.cpp")
+    render_contents_body = slice_between(
+        epub_reader_cpp,
+        "void EpubReaderActivity::renderContents(",
+        "void EpubReaderActivity::renderStatusBar()",
+    )
+    assert (
+        "page->renderTextOnly(renderer, SETTINGS.getReaderFontId(), orientedMarginLeft, orientedMarginTop);  // scan pass"
+        in render_contents_body
+    ), "Font prewarm scan pass must not render/decode images"
+    assert (
+        render_contents_body.count(
+            "page->renderTextOnly(renderer, SETTINGS.getReaderFontId(), orientedMarginLeft, orientedMarginTop);"
+        )
+        >= 3
+    ), "Text AA grayscale passes must render text only so image pages are not decoded twice more"
+    assert "page->render(renderer, SETTINGS.getReaderFontId(), orientedMarginLeft, orientedMarginTop);" in render_contents_body
+
+    chapter_parser_cpp = read("lib/Epub/Epub/parsers/ChapterHtmlSlimParser.cpp")
+    assert 'constexpr const char* IMAGE_TAGS[] = {"img", "image"};' in chapter_parser_cpp
+    image_branch = slice_between(
+        chapter_parser_cpp,
+        "if (matches(name, IMAGE_TAGS, std::size(IMAGE_TAGS)))",
+        "  if (matches(name, SKIP_TAGS",
+    )
+    assert '"src"' in image_branch
+    assert '"href"' in image_branch
+    assert '"xlink:href"' in image_branch
+    assert "Parsed image element:" in image_branch
+    assert "Resolved image:" in image_branch
+    assert "Image placeholder by reader setting" in image_branch
+    assert "Image suppressed by reader setting" in image_branch
+    assert "Unsupported image format" in image_branch
 
     assert_not_contains(
         "lib/GfxRenderer/GfxRenderer.h",
