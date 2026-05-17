@@ -23,6 +23,12 @@ def assert_not_contains(rel: str, *needles: str) -> None:
         assert needle not in text, f"{rel} must not contain {needle!r}"
 
 
+def slice_between(text: str, start: str, end: str) -> str:
+    start_idx = text.index(start)
+    end_idx = text.index(end, start_idx)
+    return text[start_idx:end_idx]
+
+
 def main() -> None:
     assert_contains(
         "lib/Epub/Epub/IncrementalSectionTypes.h",
@@ -300,6 +306,70 @@ def main() -> None:
         "lib/Epub/Epub.cpp",
         "FsHelpers::removeDirRecursive(cachePath.c_str())",
     )
+
+    assert_contains(
+        "src/CrossPointSettings.h",
+        "uint8_t skipCoverOnBookEntry = 1;",
+    )
+    assert_contains(
+        "src/SettingsList.h",
+        "SettingInfo::Toggle(StrId::STR_SKIP_COVER_ON_BOOK_ENTRY, &CrossPointSettings::skipCoverOnBookEntry",
+        '"skipCoverOnBookEntry"',
+        "StrId::STR_CAT_READER",
+    )
+    assert_contains(
+        "lib/I18n/translations/english.yaml",
+        'STR_SKIP_COVER_ON_BOOK_ENTRY: "Skip covers on book entry"',
+    )
+    assert_contains(
+        "docs/file-formats.md",
+        "#define EXPECTED_VERSION 6",
+        "String coverPageHref",
+    )
+    assert_contains(
+        "lib/Epub/Epub/BookMetadataCache.h",
+        "std::string coverPageHref;",
+    )
+    assert_contains(
+        "lib/Epub/Epub/BookMetadataCache.cpp",
+        "constexpr uint8_t BOOK_CACHE_VERSION = 6;",
+        "metadata.coverPageHref.size()",
+        "serialization::writeString(bookFile, metadata.coverPageHref);",
+        "serialization::readString(bookFile, coreMetadata.coverPageHref);",
+    )
+    assert_contains(
+        "lib/Epub/Epub.cpp",
+        "bookMetadata.coverPageHref = opfParser.guideCoverPageHref;",
+        "int Epub::getFreshEntrySpineIndex(bool skipCoverOnBookEntry) const",
+        "Fresh entry spine:",
+        "text/start reference",
+        "Cover page at spine 0; skipping to spine 1",
+        "Cover wrapper at spine 0; skipping to spine 1",
+    )
+    assert_contains(
+        "lib/Epub/Epub.h",
+        "int getFreshEntrySpineIndex(bool skipCoverOnBookEntry) const;",
+    )
+    assert_contains(
+        "lib/Epub/Epub/parsers/ContentOpfParser.cpp",
+        'type == "text" || (type == "start" && self->textReferenceHref.empty())',
+    )
+
+    epub_reader_cpp = read("src/activities/reader/EpubReaderActivity.cpp")
+    on_enter_body = slice_between(
+        epub_reader_cpp,
+        "void EpubReaderActivity::onEnter()",
+        "void EpubReaderActivity::onExit()",
+    )
+    assert "bool loadedSavedProgress = false;" in on_enter_body
+    assert "bool savedProgressAtBookStart = false;" in on_enter_body
+    assert "loadedSavedProgress = true;" in on_enter_body
+    assert "savedProgressAtBookStart = currentSpineIndex == 0 && nextPageNumber == 0;" in on_enter_body
+    assert "const bool freshBookEntry = !loadedSavedProgress || savedProgressAtBookStart;" in on_enter_body
+    assert "if (SETTINGS.skipCoverOnBookEntry && freshBookEntry)" in on_enter_body
+    assert "epub->getFreshEntrySpineIndex(SETTINGS.skipCoverOnBookEntry)" in on_enter_body
+    assert "Treating saved 0,0 progress as cover-start progress" in on_enter_body
+    assert "cachedChapterTotalPageCount = 0;" in on_enter_body
 
 
 if __name__ == "__main__":
